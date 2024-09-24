@@ -63,7 +63,7 @@ jobs:
         with:
           image: ${{ env.OPERATOR_NAME }}
           tags: ${{ env.IMG_TAGS }}
-          platforms: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+          platforms: linux/s390x
           build-args: |
             VERSION=${{ env.VERSION }}
             DEFAULT_AUTHORINO_IMAGE=${{ env.DEFAULT_AUTHORINO_IMAGE }}
@@ -138,7 +138,7 @@ jobs:
         with:
           image: ${{ env.OPERATOR_NAME }}-bundle
           tags: ${{ env.IMG_TAGS }}
-          platforms: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+          platforms: linux/s390x
           build-args: |
             version=${{ env.VERSION }}
           containerfiles: |
