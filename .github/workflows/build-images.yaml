@@ -191,7 +191,7 @@ jobs:
           echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
       - name: Install qemu dependency
-        if: matrix.platform == 'amd64'
+        if: ${{ matrix.platform == 'amd64' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
@@ -208,7 +208,7 @@ jobs:
         with:
           opm: "4.14.4"
       - name: Run make catalog (main)
-        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }} && matrix.platform == 'amd64'
+        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME && matrix.platform == 'amd64' }}
         run: |
           make catalog \
             REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} \
@@ -217,7 +217,7 @@ jobs:
             AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }} \
             CHANNELS=${{ inputs.channels }}
       - name: Run make catalog (release)
-        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }} && matrix.platform == 'amd64'
+        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME && matrix.platform == 'amd64' }} 
         run: |
           make catalog \
             REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} \
@@ -234,7 +234,7 @@ jobs:
         run: git diff
       - name: Build Image for amd64 and arm64
         id: build-image
-        if: matrix.platform == 'amd64'
+        if: ${{ matrix.platform == 'amd64' }}
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.OPERATOR_NAME }}-catalog
@@ -244,13 +244,13 @@ jobs:
           dockerfiles: |
             ./catalog/${{ env.OPERATOR_NAME }}-catalog.Dockerfile
       - name: build and push catalog (main) for s390x and ppc64le
-        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }} && matrix.platform == 's390x'
+        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME && matrix.platform == 's390x' }}
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
         run: ./scripts/build_catalog.sh
       - name: build and push catalog (release)
-        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }} && matrix.platform == 's390x'
+        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME && matrix.platform == 's390x' }} 
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
