@@ -201,7 +201,7 @@ jobs:
           sudo apt-get install -y qemu-user-static
       - name: Set permissions for build script
         if: matrix.platfomr=='s390x'
-        run: chmod +x ./script/build_catalog.sh
+        run: chmod +x ./scripts/build_catalog.sh
       - name: Install opm from OpenShift Mirror for s390x and ppc64le
         if: ${{ matrix.platform  == 's390x' }}
         uses: redhat-actions/openshift-tools-installer@v1
@@ -232,7 +232,7 @@ jobs:
           password: ${{ secrets.IMG_REGISTRY_TOKEN }}
       - name: Git diff
         run: git diff
-      - name: Build Image
+      - name: Build Image for amd64 and arm64
         id: build-image
         if: matrix.platform == 'amd64'
         uses: redhat-actions/buildah-build@v2
@@ -248,13 +248,13 @@ jobs:
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
-        run: ./script/build_catalog.sh
+        run: ./scripts/build_catalog.sh
       - name: build and push catalog (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }} && matrix.platform === 's390x'
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
-        run: ./script/build_catalog.sh
+        run: ./scripts/build_catalog.sh
       - name: Push Image
         if: ${{ !env.ACT }} && matrix.platform === 'amd64'
         id: push-to-quay
