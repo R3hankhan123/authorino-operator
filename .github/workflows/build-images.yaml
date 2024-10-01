@@ -200,7 +200,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
       - name: Set permissions for build script
-        if: matrix.platfomr=='s390x'
         run: chmod +x ./scripts/build_catalog.sh
       - name: Install opm from OpenShift Mirror for s390x and ppc64le
         if: ${{ matrix.platform  == 's390x' }}
