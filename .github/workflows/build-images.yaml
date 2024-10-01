@@ -191,6 +191,7 @@ jobs:
           echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
       - name: Install qemu dependency
+        if: matrix.platform == 'amd64'
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
@@ -202,7 +203,7 @@ jobs:
       - name: Set permissions for build script
         run: chmod +x ./scripts/build_catalog.sh
       - name: Install opm from OpenShift Mirror for s390x and ppc64le
-        if: ${{ matrix.platform  == 's390x' }}
+        if: matrix.platform  == 's390x'
         uses: redhat-actions/openshift-tools-installer@v1
         with:
           opm: "4.14.4"
@@ -243,19 +244,19 @@ jobs:
           dockerfiles: |
             ./catalog/${{ env.OPERATOR_NAME }}-catalog.Dockerfile
       - name: build and push catalog (main) for s390x and ppc64le
-        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }} && matrix.platform === 's390x'
+        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }} && matrix.platform == 's390x'
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
         run: ./scripts/build_catalog.sh
       - name: build and push catalog (release)
-        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }} && matrix.platform === 's390x'
+        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }} && matrix.platform == 's390x'
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
         run: ./scripts/build_catalog.sh
       - name: Push Image
-        if: ${{ !env.ACT }} && matrix.platform === 'amd64'
+        if: ${{ !env.ACT }} && matrix.platform == 'amd64'
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
