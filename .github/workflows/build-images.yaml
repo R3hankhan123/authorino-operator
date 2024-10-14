@@ -150,7 +150,7 @@ jobs:
       - name: Print Image URL
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
 
-    build-catalog:
+  build-catalog:
     name: Build and push catalog image
     needs: [build, build-bundle]
     runs-on: ubuntu-20.04
