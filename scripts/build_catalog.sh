@@ -21,7 +21,7 @@ for arch in amd64 ppc64le arm64 s390x; do
     --bundles "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${first_tag}" \
     --binary-image "quay.io/operator-framework/opm:v1.26.2-${arch}"
   
-  docker push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+  #docker push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
 done
 
 # Create and push a multi-architecture manifest for the first tag.
