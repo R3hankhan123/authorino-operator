@@ -186,8 +186,10 @@ jobs:
           else
           echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
           fi
-      - name: Install opm dependency
-        run: make opm
+      - name: Install opm from OpenShift Mirror
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          opm: "4.14.4"
       - name: Set permissions for build script
         run: chmod +x ./script/build_catalog.sh
       - name: Login to Quay.io
