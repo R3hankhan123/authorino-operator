@@ -1,33 +1,47 @@
 #!/usr/bin/env bash
-# builds the OLM catalog index and pushes it to quay.io.
+# Builds the OLM catalog index and pushes it to quay.io.
 #
-# To push to your own registry, override the IMG_REGISTRY_HOST , IMG_REGISTRY_ORG , OPERATOR_NAME and TAG env vars,
+# To push to your own registry, override the IMG_REGISTRY_HOST, IMG_REGISTRY_ORG, OPERATOR_NAME, and TAG env vars,
 # i.e:
-#   IMG_REGISTRY_HOST=quay.io IMG_REGISTRY_ORG=yourusername OPERATOR_NAME=authorino-operator TAG=latest ./script/build_catalog.sh
+#   IMG_REGISTRY_HOST=quay.io IMG_REGISTRY_ORG=yourusername OPERATOR_NAME=authorino-operator TAG="latest 0e972a42f51453a8cea5e6df7f8f6ce6eb1b4075" ./script/build_catalog.sh
 #
 # REQUIREMENTS:
-#  * a valid login session to a container registry.
-#  * `docker`
-#  * `opm`
-#
+#  * A valid login session to a container registry.
+#  * Docker
+#  * opm
 
-# Iterate over tag list i.e. latest 8a17c81d5e9f04545753e5501dddc4a0ac2c7e03
+# Iterate over tag list, i.e., latest 0e972a42f51453a8cea5e6df7f8f6ce6eb1b4075
 IFS=' ' read -r -a tags <<< "$TAG"
 
-for tag in "${tags[@]}"
-do 
-  # Build & push catalog images for each architecture using the tag
+# Build & push catalog images for each architecture using the first tag only.
+first_tag="${tags[0]}"
+for arch in amd64 ppc64le arm64 s390x; do
+  opm index add --build-tool docker \
+    --tag "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}" \
+    --bundles "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${first_tag}" \
+    --binary-image "quay.io/operator-framework/opm:v1.31.0-${arch}"
+  
+  docker push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+done
 
-  opm index add --build-tool docker  --tag  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-ppc64le" --bundles "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${tag}" --binary-image "quay.io/operator-framework/opm:v1.28.0-ppc64le"
-  docker push ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-ppc64le
+# Create and push a multi-architecture manifest for the first tag.
+docker manifest create --amend "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}" \
+  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-amd64" \
+  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-arm64" \
+  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-ppc64le" \
+  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-s390x"
 
-  opm index add --build-tool docker  --tag  "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-s390x" --bundles "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${tag}" --binary-image "quay.io/operator-framework/opm:v1.28.0-s390x"
-  docker push ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-s390x
+docker manifest push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
 
-  # Create a multi-architecture manifest
-  docker manifest create --amend ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag} \
-                 ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-ppc64le \
-                 ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-s390x
+# Re-tag the existing manifest with the remaining tags without rebuilding.
+for tag in "${tags[@]:1}"; do
+  # Create and push a new manifest that references the same architecture-specific images.
+  docker manifest create --amend "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" \
+    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-amd64" \
+    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-arm64" \
+    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-ppc64le" \
+    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-s390x"
 
-  docker manifest push ${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}
+  # Push the manifest for the new tag.
+  docker manifest push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
 done
