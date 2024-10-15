@@ -150,7 +150,7 @@ jobs:
       - name: Print Image URL
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
 
-    build-catalog:
+  build-catalog:
     name: Build and push catalog image
     needs: [build, build-bundle]
     runs-on: ubuntu-20.04
@@ -216,7 +216,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
           context: ./catalog
           dockerfiles: |
-            ./catalog/${{ env.OPERATOR_NAME }}-catalog.Dockerfile
+            $(for platform in linux/s390x linux/amd64 linux/arm64 linux/ppc64le; do echo ./catalog/${{ env.OPERATOR_NAME }}-$platform.Dockerfile; done)
       - name: Push Image
         if: ${{ !env.ACT }}
         id: push-to-quay
