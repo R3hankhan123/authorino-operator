@@ -1,15 +1,20 @@
 ##@ Operator Catalog
 
+# List of platforms for multi-architecture builds
+PLATFORMS = linux/s390x,linux/amd64,linux/arm64,linux/ppc64le
+
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(IMAGE_TAG)
 
 CATALOG_FILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog/operator.yaml
-CATALOG_DOCKERFILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
+CATALOG_DOCKERFILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile.$(ARCH)
 
 $(CATALOG_DOCKERFILE): $(OPM)
-	-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
-	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog
-catalog-dockerfile: $(CATALOG_DOCKERFILE) ## Generate catalog dockerfile.
+    -mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
+    for platform in $(PLATFORMS); do \
+    	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog-$$platform -i quay.io/operator-framework/opm:v1.28.0-$$platform;
+    done
+catalog-dockerfile: $(CATALOG_DOCKERFILE) ## Generate catalog Dockerfile.
 
 $(CATALOG_FILE): $(OPM) $(YQ)
 	@echo "************************************************************"
