@@ -12,7 +12,7 @@
 
 # Iterate over tag list, i.e., latest 0e972a42f51453a8cea5e6df7f8f6ce6eb1b4075
 IFS=' ' read -r -a tags <<< "$TAG"
-
+echo "Tags: ${tags[@]}"
 # Build & push catalog images for each architecture using the first tag only.
 first_tag="${tags[0]}"
 for arch in amd64 ppc64le arm64 s390x; do
