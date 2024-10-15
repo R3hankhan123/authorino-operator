@@ -203,7 +203,7 @@ jobs:
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
-        run: ./script/build_catalog.sh
+        run: ./scripts/build_catalog.sh
       - name: build and push catalog (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
         shell: bash
