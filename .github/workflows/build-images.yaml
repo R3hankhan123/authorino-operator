@@ -209,4 +209,4 @@ jobs:
         shell: bash
         env:
           TAG: ${{ env.IMG_TAGS }}
-        run: ./script/build_catalog.sh
+        run: ./scripts/build_catalog.sh
