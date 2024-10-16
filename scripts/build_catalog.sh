@@ -9,13 +9,14 @@ CATALOG_DOCKERFILE="${PROJECT_DIR}/catalog/authorino-operator-catalog.Dockerfile
 # Use the first tag to create the manifest and push images.
 first_tag="${tags[0]}"
 BUNDLE_IMG="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${first_tag}"
-
+YQ= $(shell pwd)/bin/yq
+OPM= $(shell pwd)/bin/opm
 # Build & push catalog images for each architecture.
 for arch in amd64 ppc64le arm64 s390x; do
   rm -rf "${PROJECT_DIR}/catalog/authorino-operator-catalog"
   rm -rf "${PROJECT_DIR}/catalog/authorino-operator-catalog.Dockerfile"
   mkdir -p "${PROJECT_DIR}/catalog/authorino-operator-catalog"
-  cd "${PROJECT_DIR}/catalog" && opm generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
+  cd "${PROJECT_DIR}/catalog" && ${OPM} generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
   
   echo "************************************************************"
   echo "Build authorino operator catalog"
