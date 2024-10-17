@@ -26,18 +26,24 @@ BUNDLE_IMG="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${f
 # Ensure required binaries exist and are executable
 YQ="${PROJECT_DIR}/bin/yq"
 OPM="${PROJECT_DIR}/bin/opm"
-
 if [ ! -f "$YQ" ]; then
     echo "Error: yq binary not found at $YQ"
+    echo "Current directory: $(pwd)"
+    echo "PROJECT_DIR: ${PROJECT_DIR}"
+    ls -la "${PROJECT_DIR}/bin" || echo "bin directory not found"
     exit 1
 fi
 
 if [ ! -f "$OPM" ]; then
     echo "Error: opm binary not found at $OPM"
+    echo "Current directory: $(pwd)"
+    echo "PROJECT_DIR: ${PROJECT_DIR}"
+    ls -la "${PROJECT_DIR}/bin" || echo "bin directory not found"
     exit 1
 fi
 
-chmod +x "$YQ" "$OPM"
+chmod +x "$YQ" "$OPM" || echo "Failed to set executable permissions"
+
 
 # Build & push catalog images for each architecture
 for arch in amd64 ppc64le arm64 s390x; do
