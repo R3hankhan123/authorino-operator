@@ -14,7 +14,9 @@ fi
 IFS=' ' read -r -a tags <<< "$TAG"
 
 # Set up directory paths
-PROJECT_DIR=$(pwd)
+PROJECT_DIR=$(dirname "$(realpath "$0")")
+cd "$PROJECT_DIR"/..
+echo ${PROJECT-DIR}
 CATALOG_DIR="${PROJECT_DIR}/catalog/authorino-operator-catalog"
 CATALOG_FILE="${CATALOG_DIR}/operator.yaml"
 CATALOG_DOCKERFILE="${PROJECT_DIR}/catalog/authorino-operator-catalog.Dockerfile"
