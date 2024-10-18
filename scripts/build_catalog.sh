@@ -14,7 +14,7 @@ fi
 IFS=' ' read -r -a tags <<< "$TAG"
 
 # Set up directory paths
-PROJECT_DIR=$(dirname "$(realpath "$0")")
+PROJECT_DIR=$(pwd)
 CATALOG_DIR="${PROJECT_DIR}/catalog/authorino-operator-catalog"
 CATALOG_FILE="${CATALOG_DIR}/operator.yaml"
 CATALOG_DOCKERFILE="${PROJECT_DIR}/catalog/authorino-operator-catalog.Dockerfile"
@@ -26,21 +26,6 @@ BUNDLE_IMG="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${f
 # Ensure required binaries exist and are executable
 YQ="${PROJECT_DIR}/bin/yq"
 OPM="${PROJECT_DIR}/bin/opm"
-if [ ! -f "$YQ" ]; then
-    echo "Error: yq binary not found at $YQ"
-    echo "Current directory: $(pwd)"
-    echo "PROJECT_DIR: ${PROJECT_DIR}"
-    ls -la "${PROJECT_DIR}/bin" || echo "bin directory not found"
-    exit 1
-fi
-
-if [ ! -f "$OPM" ]; then
-    echo "Error: opm binary not found at $OPM"
-    echo "Current directory: $(pwd)"
-    echo "PROJECT_DIR: ${PROJECT_DIR}"
-    ls -la "${PROJECT_DIR}/bin" || echo "bin directory not found"
-    exit 1
-fi
 
 chmod +x "$YQ" "$OPM" || echo "Failed to set executable permissions"
 
@@ -65,20 +50,8 @@ for arch in amd64 ppc64le arm64 s390x; do
     echo "ARCHITECTURE                = ${arch}"
     echo "************************************************************"
     
-    # Generate catalog
-    GENERATE_SCRIPT="${PROJECT_DIR}/utils/generate-catalog.sh"
-    if [ ! -f "$GENERATE_SCRIPT" ]; then
-        echo "Error: generate-catalog.sh script not found at $GENERATE_SCRIPT"
-        exit 1
-    fi
-    
-    bash "$GENERATE_SCRIPT" "${OPM}" "${YQ}" "${BUNDLE_IMG}" "${CHANNELS}"
-    
-    # Build and push the image
-    if [ ! -f "${CATALOG_DOCKERFILE}" ]; then
-        echo "Error: Dockerfile not found at ${CATALOG_DOCKERFILE}"
-        exit 1
-    }
+    $(PROJECT_DIR)/utils/generate-catalog.sh $(OPM) $(YQ) $(BUNDLE_IMG) $@ $(CHANNELS)
+
     
     docker build "${PROJECT_DIR}/catalog" \
         -f "${CATALOG_DOCKERFILE}" \
@@ -104,4 +77,6 @@ for tag in "${tags[@]:1}"; do
         --amend "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
     
     docker manifest push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
+    docker rmi "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
 done
+docker rmi "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
