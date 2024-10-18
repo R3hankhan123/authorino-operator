@@ -23,12 +23,6 @@ CATALOG_DOCKERFILE="${PROJECT_DIR}/catalog/authorino-operator-catalog.Dockerfile
 first_tag="${tags[0]}"
 BUNDLE_IMG="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-bundle:${first_tag}"
 
-# Ensure required binaries exist and are executable
-YQ="${PROJECT_DIR}/bin/yq"
-OPM="${PROJECT_DIR}/bin/opm"
-
-chmod +x "$YQ" "$OPM" || echo "Failed to set executable permissions"
-
 
 # Build & push catalog images for each architecture
 for arch in amd64 ppc64le arm64 s390x; do
@@ -41,7 +35,7 @@ for arch in amd64 ppc64le arm64 s390x; do
     
     # Generate dockerfile
     cd "${PROJECT_DIR}/catalog" || exit 1
-    "${OPM}" generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
+    opm generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
     
     echo "************************************************************"
     echo "Build authorino operator catalog"
@@ -50,7 +44,7 @@ for arch in amd64 ppc64le arm64 s390x; do
     echo "ARCHITECTURE                = ${arch}"
     echo "************************************************************"
     
-    $(PROJECT_DIR)/utils/generate-catalog.sh $(OPM) $(YQ) $(BUNDLE_IMG) $@ $(CHANNELS)
+    $(PROJECT_DIR)/utils/generate-catalog.sh $(YQ) $(BUNDLE_IMG) $@ $(CHANNELS)
 
     
     docker build "${PROJECT_DIR}/catalog" \
