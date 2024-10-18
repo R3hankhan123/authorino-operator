@@ -190,6 +190,8 @@ jobs:
         run: make opm
       - name: Install yq dependancy
         run: make yq
+      - name: Set permissions for Generate catalog script
+        run: chmod +x ./utils/generate-catalog.sh
       - name: Set permissions for build script
         run: chmod +x ./scripts/build_catalog.sh
       - name: Login to Quay.io
