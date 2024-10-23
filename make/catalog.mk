@@ -54,13 +54,13 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		ARCH=$$platform; \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
-		@echo "creating dir"
-		-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
-		@echo "creating docker file"
-		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-$$ARCH"
+		echo "Creating directory"; \
+		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
+		echo "Creating Dockerfile"; \
+		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-$$ARCH"; \
 		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
-		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog-$$ARCH; \
-		CATALOG_IMG_MULTI=$(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
+		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
+		CATALOG_IMG_MULTI=$$CATALOG_IMG_MULTI_BASE:$(first_tag)-$$ARCH; \
 		$(MAKE) catalog-build-multi IMG=$$CATALOG_IMG_MULTI; \
 		$(MAKE) catalog-push IMG=$$CATALOG_IMG_MULTI; \
 	done
