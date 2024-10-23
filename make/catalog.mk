@@ -57,17 +57,7 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		echo "Creating directory"; \
 		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		echo "Creating Dockerfile"; \
-		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-$$ARCH"; \
-		echo "************************************************************"; \
-		echo "Build authorino operator catalog"; \
-		echo ""; \
-		echo "BUNDLE_IMG = $(BUNDLE_IMG)"; \
-		echo "CHANNELS   = $(CHANNELS)"; \
-		echo "************************************************************"; \
-		echo ""; \
-		echo "Please check this matches your expectations and override variables if needed."; \
-		echo ""; \
-		$(PROJECT_DIR)/utils/generate-catalog.sh $(OPM) $(YQ) $(BUNDLE_IMG) $@ $(CHANNELS); \
+		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
 		CATALOG_IMG_MULTI=$$CATALOG_IMG_MULTI_BASE:$(first_tag)-$$ARCH; \
 		docker build $(PROJECT_DIR)/catalog -f $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile -t $$CATALOG_IMG_MULTI; \
