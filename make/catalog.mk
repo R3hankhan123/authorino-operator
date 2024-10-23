@@ -39,7 +39,7 @@ catalog: $(OPM) ## Generate catalog content and validate.
 	# Initializing the Catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
-	$(MAKE) catalog-dockerfile
+	
 	$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG)
 	cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog
 
@@ -54,7 +54,10 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		ARCH=$$platform; \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
-		$(MAKE) catalog-dockerfile-multi ARCH=$$ARCH; \
+		@echo "creating dir"
+		-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
+		@echo "creating docker file"
+		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
 		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog-$$ARCH; \
 		CATALOG_IMG_MULTI=$(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
