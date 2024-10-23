@@ -50,7 +50,6 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 	@for platform in $(PLATFORMS); do \
 		echo "Building catalog for $$platform..."; \
 		ARCH=$$platform; \
-		# Initialize the catalog for each architecture \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
 		$(MAKE) catalog-dockerfile-multi ARCH=$$ARCH; \
