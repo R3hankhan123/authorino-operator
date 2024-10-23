@@ -46,7 +46,7 @@ catalog: $(OPM) ## Generate catalog content and validate.
 .PHONY: catalog-multiarch
 catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple architectures.
 	@echo "Building multi-arch catalog using the first tag from IMG_TAGS: $(IMG_TAGS)"
-	$(eval first_tag := $(word 1, $(IMG_TAGS)))
+	$(eval first_tag := $(word 1, $(IMG_TAGS)))  # Get the first tag
 	CATALOG_IMG_MULTI_BASE=$(IMAGE_TAG_BASE)-catalog
 
 	@for platform in $(PLATFORMS); do \
@@ -57,7 +57,7 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		echo "Creating directory"; \
 		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		echo "Creating Dockerfile"; \
-		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
+		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG) ARCH=$$ARCH; \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
 		CATALOG_IMG_MULTI=$$CATALOG_IMG_MULTI_BASE:$(first_tag)-$$ARCH; \
 		docker build $(PROJECT_DIR)/catalog -f $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile -t $$CATALOG_IMG_MULTI; \
