@@ -15,7 +15,9 @@ catalog-dockerfile: $(CATALOG_DOCKERFILE) ## Generate catalog Dockerfile.
 
 # Generate catalog Dockerfile for multiple architectures.
 $(CATALOG_DOCKERFILE_MULTI): $(OPM)
+	@echo "creating dir"
 	-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
+	@echo "creating docker file"
 	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
 catalog-dockerfile-multi: $(CATALOG_DOCKERFILE_MULTI) ## Generate catalog Dockerfile for multiarch.
 
@@ -50,8 +52,8 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 	@for platform in $(PLATFORMS); do \
 		echo "Building catalog for $$platform..."; \
 		ARCH=$$platform; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
+		-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
+		-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
 		$(MAKE) catalog-dockerfile-multi ARCH=$$ARCH; \
 		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog-$$ARCH; \
