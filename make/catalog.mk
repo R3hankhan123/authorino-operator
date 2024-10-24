@@ -56,7 +56,7 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		echo "Creating directory"; \
 		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
 		echo "Creating Dockerfile"; \
-		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG) ARCH=$$ARCH; \
+		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
 		CATALOG_IMG_MULTI= $(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
 		docker build $(PROJECT_DIR)/catalog -f $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile -t $$CATALOG_IMG_MULTI; \
