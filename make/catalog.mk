@@ -2,7 +2,7 @@
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(IMAGE_TAG)
-
+CATALOG_IMG_MULTI_BASE ?= $(IMAGE_TAG_BASE)-catalog
 CATALOG_FILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog/operator.yaml
 CATALOG_DOCKERFILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
 PLATFORMS ?= amd64 arm64 s390x ppc64le
@@ -47,7 +47,6 @@ catalog: $(OPM) ## Generate catalog content and validate.
 catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple architectures.
 	@echo "Building multi-arch catalog using the first tag from IMG_TAGS: $(IMG_TAGS)"
 	$(eval first_tag := $(word 1, $(IMG_TAGS)))  # Get the first tag
-	CATALOG_IMG_MULTI_BASE=$(IMAGE_TAG_BASE)-catalog
 
 	@for platform in $(PLATFORMS); do \
 		echo "Building catalog for $$platform..."; \
@@ -59,7 +58,7 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 		echo "Creating Dockerfile"; \
 		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG) ARCH=$$ARCH; \
 		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
-		CATALOG_IMG_MULTI=$$CATALOG_IMG_MULTI_BASE:$(first_tag)-$$ARCH; \
+		CATALOG_IMG_MULTI= $(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
 		docker build $(PROJECT_DIR)/catalog -f $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile -t $$CATALOG_IMG_MULTI; \
 		docker push $$CATALOG_IMG_MULTI; \
 	done
