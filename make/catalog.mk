@@ -3,6 +3,7 @@
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(IMAGE_TAG)
 CATALOG_IMG_MULTI_BASE ?= $(IMAGE_TAG_BASE)-catalog
+
 CATALOG_FILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog/operator.yaml
 CATALOG_DOCKERFILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
 PLATFORMS ?= amd64 arm64 s390x ppc64le
@@ -39,28 +40,26 @@ catalog: $(OPM) ## Generate catalog content and validate.
 	# Initializing the Catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
-	
+	$(MAKE) catalog-dockerfile
 	$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG)
 	cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog
 
 .PHONY: catalog-multiarch
 catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple architectures.
 	@echo "Building multi-arch catalog using the first tag from IMG_TAGS: $(IMG_TAGS)"
-	$(eval first_tag := $(word 1, $(IMG_TAGS)))  # Get the first tag
+	$(eval first_tag := $(word 1, $(IMG_TAGS)))
 
 	@for platform in $(PLATFORMS); do \
 		echo "Building catalog for $$platform..."; \
 		ARCH=$$platform; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
-		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
-		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-$$ARCH"; \
+		-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
+		-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
+		$(MAKE) catalog-dockerfile-multi ARCH=$$ARCH; \
 		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
-		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog; \
+		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog-$$ARCH; \
 		CATALOG_IMG_MULTI=$(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
-		echo "Building and pushing image: $$CATALOG_IMG_MULTI"; \
-		docker build $(PROJECT_DIR)/catalog -f $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile -t $$CATALOG_IMG_MULTI .; \
-		docker push $$CATALOG_IMG_MULTI; \
+		$(MAKE) catalog-build-multi IMG=$$CATALOG_IMG_MULTI; \
+		$(MAKE) catalog-push IMG=$$CATALOG_IMG_MULTI; \
 	done
 
 	@echo "Creating multi-arch manifest for tag: $(first_tag)"
