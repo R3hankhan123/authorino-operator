@@ -46,7 +46,7 @@ catalog: $(OPM) ## Generate catalog content and validate.
 
 .PHONY: catalog-multiarch
 catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple architectures.
-	 Initializing the Catalog
+	#Initializing the Catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
 	$(MAKE) catalog-dockerfile-multi arch=$(arch)
