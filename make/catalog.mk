@@ -2,11 +2,9 @@
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(IMAGE_TAG)
-CATALOG_IMG_MULTI_BASE ?= $(IMAGE_TAG_BASE)-catalog
 
 CATALOG_FILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog/operator.yaml
 CATALOG_DOCKERFILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
-PLATFORMS ?= amd64 arm64 s390x ppc64le
 
 # Generate catalog Dockerfile for single architecture.
 $(CATALOG_DOCKERFILE): $(OPM)
@@ -16,9 +14,8 @@ catalog-dockerfile: $(CATALOG_DOCKERFILE) ## Generate catalog Dockerfile.
 
 # Generate catalog Dockerfile for multiple architectures.
 $(CATALOG_DOCKERFILE_MULTI): $(OPM)
-	@echo "creating dir"
+	@echo "Running for ${arch}"
 	-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
-	@echo "creating docker file"
 	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
 catalog-dockerfile-multi: $(CATALOG_DOCKERFILE_MULTI) ## Generate catalog Dockerfile for multiarch.
 
@@ -50,7 +47,9 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
 	$(MAKE) catalog-dockerfile-multi arch=$(arch)
+	@echo "creating dir"
 	$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG)
+	@echo "leaving dir"
 	cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog
 
 
