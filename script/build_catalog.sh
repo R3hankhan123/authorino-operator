@@ -13,7 +13,7 @@ for arch in amd64 ppc64le arm64 s390x; do
   make catalog-multiarch arch="${arch}" 
   # Push the catalog image after building
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
-  make catalog-build-multi IMG= "${image_tag}"
+  make catalog-build-multi IMG="${image_tag}"
   docker push "${image_tag}"
 done
 
