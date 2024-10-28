@@ -196,20 +196,17 @@ jobs:
           registry: ${{ env.IMG_REGISTRY_HOST }}
           username: ${{ secrets.IMG_REGISTRY_USERNAME }}
           password: ${{ secrets.IMG_REGISTRY_TOKEN }}
-      - name: Run make catalog (main)
+      - name: Set permissions for build script
+        run: chmod +x ./script/build_catalog.sh
+      - name: build and push catalog (main)
         if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }}
-        run: |
-          make catalog-multiarch \
-            REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} \
-            VERSION=${{ env.VERSION }} \
-            IMAGE_TAG=${{ github.sha }} \
-            AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }} \
-            CHANNELS=${{ inputs.channels }}
-      - name: Run make catalog (release)
+        shell: bash
+        env:
+          TAG: ${{ env.IMG_TAGS }}
+        run: ./script/build_catalog.sh
+      - name: build and push catalog (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
-        run: |
-          make catalog-multiarch \
-            REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} \
-            VERSION=${{ env.VERSION }} \
-            AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} \
-            CHANNELS=${{ inputs.channels }}
+        shell: bash
+        env:
+          TAG: ${{ env.IMG_TAGS }}
+        run: ./script/build_catalog.sh
