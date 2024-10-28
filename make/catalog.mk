@@ -47,7 +47,8 @@ catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple 
 	@echo "Building catalog for architecture: $(arch)"
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
 	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
-	$(MAKE) catalog-dockerfile-multi arch=$(arch)
+	-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
+	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
 	@echo "creating dir"
 	$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG)
 	@echo "leaving dir"
