@@ -46,35 +46,13 @@ catalog: $(OPM) ## Generate catalog content and validate.
 
 .PHONY: catalog-multiarch
 catalog-multiarch: $(OPM) ## Generate catalog content and validate for multiple architectures.
-	@echo "Building multi-arch catalog using the first tag from IMG_TAGS: $(IMG_TAGS)"
-	$(eval first_tag := $(word 1, $(IMG_TAGS)))
+	 Initializing the Catalog
+	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog
+	-rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile
+	$(MAKE) catalog-dockerfile-multi arch=$(arch)
+	$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG)
+	cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog
 
-	@for platform in $(PLATFORMS); do \
-		echo "Building catalog for $$platform..."; \
-		ARCH=$$platform; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
-		rm -rf $(PROJECT_DIR)/catalog/authorino-operator-catalog.Dockerfile; \
-		mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog; \
-		cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-$$ARCH"; \
-		$(MAKE) $(CATALOG_FILE) BUNDLE_IMG=$(BUNDLE_IMG); \
-		cd $(PROJECT_DIR)/catalog && $(OPM) validate authorino-operator-catalog-$$ARCH; \
-		CATALOG_IMG_MULTI=$(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$ARCH; \
-		$(MAKE) catalog-build-multi IMG=$$CATALOG_IMG_MULTI; \
-		$(MAKE) catalog-push IMG=$$CATALOG_IMG_MULTI; \
-	done
-
-	@echo "Creating multi-arch manifest for tag: $(first_tag)"
-	docker manifest create --amend $(CATALOG_IMG_MULTI_BASE):$(first_tag) \
-		$(foreach platform, $(PLATFORMS), $(CATALOG_IMG_MULTI_BASE):$(first_tag)-$$platform)
-	docker manifest push $(CATALOG_IMG_MULTI_BASE):$(first_tag)
-
-	@for tag in $(wordlist 2, $(words $(IMG_TAGS)), $(IMG_TAGS)); do \
-		echo "Creating manifest for additional tag: $$tag"; \
-		docker manifest create --amend $(CATALOG_IMG_MULTI_BASE):$$tag \
-			$(CATALOG_IMG_MULTI_BASE):$(first_tag); \
-		docker manifest push $(CATALOG_IMG_MULTI_BASE):$$tag; \
-		docker rmi $(CATALOG_IMG_MULTI_BASE):$$tag; \
-	done
 
 # Build a catalog image.
 .PHONY: catalog-build
