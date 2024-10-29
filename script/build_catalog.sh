@@ -1,42 +1,42 @@
 #!/usr/bin/env bash
 # Builds the OLM catalog index and pushes it to quay.io.
 
-# Iterate over tag list, i.e., latest 0e972a42f51453a8cea5e6df7f8f6ce6eb1b4075
-IFS=' ' read -r -a tags <<< "$TAG"
+set -e  # Exit on error
 
-# Use the first tag to create the manifest and push images.
+# Split tags into an array
+IFS=' ' read -r -a tags <<< "$TAG"
 first_tag="${tags[0]}"
 
-# Build & push catalog images for each architecture using make.
+# Build and push catalog images for each architecture
 for arch in amd64 ppc64le arm64 s390x; do
-  # Pass the architecture to the Makefile
-  make catalog-multiarch arch="${arch}" 
-  # Push the catalog image after building
+  # Pass the architecture to the Makefile and push images
+  make catalog-multiarch arch="${arch}"
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
   make catalog-build-multi IMG="${image_tag}"
-  docker push "${image_tag}"
+  docker push "${image_tag}" &
 done
 
-# Create and push a multi-architecture manifest for the first tag.
-docker manifest create --amend "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}" \
+wait  # Wait for all background processes (parallel docker pushes)
+
+# Create and push multi-architecture manifest
+manifest="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
+docker manifest create --amend "$manifest" \
   "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-amd64" \
   "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-arm64" \
   "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-ppc64le" \
   "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-s390x"
 
-docker manifest push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
+docker manifest push "$manifest"
 
-# Annotate and push the same manifest for other tags.
+# Tag and push the manifest for additional tags
 for tag in "${tags[@]:1}"; do
-  docker tag "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}" "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
-  docker push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
-
-  # Delete the catalog image after amending the manifest
-  image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
-  docker rmi "${image_tag}" || true
+  docker tag "$manifest" "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
+  docker push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" &
 done
 
-# Delete the catalog images after amending the manifest
+wait  # Wait for all tag pushes
+
+# Clean up architecture-specific images
 for arch in amd64 ppc64le arm64 s390x; do
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
   docker rmi "${image_tag}" || true
