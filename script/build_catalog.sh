@@ -16,7 +16,14 @@ for arch in amd64 ppc64le arm64 s390x; do
   docker push "${image_tag}" &
 done
 
-wait  # Wait for all background processes (parallel docker pushes)
+manifest="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
+for arch in amd64 ppc64le arm64 s390x; do
+  image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+  until docker manifest inspect "${image_tag}" &>/dev/null; do
+    echo "Waiting for ${image_tag} to be available..."
+    sleep 5
+  done
+done
 
 # Create and push multi-architecture manifest
 manifest="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
