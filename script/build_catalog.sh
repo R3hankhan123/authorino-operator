@@ -8,7 +8,7 @@ IFS=' ' read -r -a tags <<< "$TAG"
 first_tag="${tags[0]}"
 
 # Build and push catalog images for each architecture
-for arch in amd64 ppc64le arm64 s390x; do
+for arch in amd64 arm64 s390x ppc64le; do
   # Pass the architecture to the Makefile and push images
   make catalog-multiarch arch="${arch}"
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
@@ -28,13 +28,6 @@ docker manifest push "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-
 docker pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}"
 # Tag and push the manifest for additional tags
 for tag in "${tags[@]:1}"; do
-  echo "Pulling images for tag ${tag}"
-  docker pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-amd64" || true
-  docker pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-arm64" || true
-  docker pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-ppc64le" || true
-  docker pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-s390x" || true
-
-  echo "Creating and pushing manifest for ${tag}"
   docker manifest create --amend "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" \
                    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-amd64" \
                    "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-arm64"  \
