@@ -13,8 +13,8 @@ for arch in amd64 arm64 s390x ppc64le; do
   make catalog-multiarch arch="${arch}"
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
   make catalog-build-multi IMG="${image_tag}"
-  docker push "${image_tag}" &
-  wait
+  #docker push "${image_tag}" &
+  #wait
 done
 
 # Create and push multi-architecture manifest
