@@ -24,6 +24,7 @@ env:
   OPERATOR_NAME: authorino-operator
   BUILD_CONFIG_FILE: build.yaml
   LATEST_AUTHORINO_GITREF: ${{ vars.AUTHORINO_SHA != '' && vars.AUTHORINO_SHA || 'latest' }}
+  ARCHITECTURES: "amd64 arm64 ppc64le s390x"
 
 jobs:
   build:
