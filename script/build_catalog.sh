@@ -12,8 +12,8 @@ for arch in "${architectures[@]}"; do
   make catalog-multiarch arch="${arch}"
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
   make catalog-build CATALOG_IMG="${image_tag}"
-  docker push "${image_tag}" &
-  wait
+  #docker push "${image_tag}" &
+  #wait
 done
 
 # Tag and push the manifest for additional tags
