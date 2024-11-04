@@ -29,7 +29,7 @@ for tag in "${tags[@]}"; do
 done
 
 # Clean up architecture-specific images
-#for arch in "${architectures[@]}"; do
-#  image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
-#  docker rmi "${image_tag}" || true
-#done
+for arch in "${architectures[@]}"; do
+  image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+  docker rmi "${image_tag}" || true
+done
