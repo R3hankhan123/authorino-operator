@@ -12,13 +12,6 @@ $(CATALOG_DOCKERFILE): $(OPM)
 	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog
 catalog-dockerfile: $(CATALOG_DOCKERFILE) ## Generate catalog Dockerfile.
 
-# Generate catalog Dockerfile for multiple architectures.
-$(CATALOG_DOCKERFILE_MULTI): $(OPM)
-	@echo "Running for ${arch}"
-	-mkdir -p $(PROJECT_DIR)/catalog/authorino-operator-catalog
-	cd $(PROJECT_DIR)/catalog && $(OPM) generate dockerfile authorino-operator-catalog -i "quay.io/operator-framework/opm:v1.28.0-${arch}"
-catalog-dockerfile-multi: $(CATALOG_DOCKERFILE_MULTI) ## Generate catalog Dockerfile for multiarch.
-
 # Generate the catalog file.
 $(CATALOG_FILE): $(OPM) $(YQ)
 	@echo "************************************************************"
