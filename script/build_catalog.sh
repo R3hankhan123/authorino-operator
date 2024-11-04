@@ -6,7 +6,7 @@ set -e  # Exit on error
 # Split tags into an array
 IFS=' ' read -r -a tags <<< "$TAG"
 first_tag="${tags[0]}"
-architectures=("amd64" "arm64" "ppc64le" "s390x")
+architectures=(${ARCHITECTURES})
 # Build and push catalog images for each architecture
 for arch in "${architectures[@]}"; do 
   make catalog-multiarch arch="${arch}"
