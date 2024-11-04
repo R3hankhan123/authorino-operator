@@ -6,13 +6,13 @@ set -e  # Exit on error
 # Split tags into an array
 IFS=' ' read -r -a tags <<< "$TAG"
 first_tag="${tags[0]}"
-
+architectures=("amd64" "arm64" "ppc64le" "s390x")
 # Build and push catalog images for each architecture
-for arch in amd64 ppc64le arm64 s390x; do
+for arch in "${architectures[@]}" do
   # Pass the architecture to the Makefile and push images
   make catalog-multiarch arch="${arch}"
   image_tag="${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
-  make catalog-build-multi IMG="${image_tag}"
+  make catalog-build CATALOG_IMG="${image_tag}"
   docker push "${image_tag}" &
   wait
 done
