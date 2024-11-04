@@ -2,7 +2,7 @@
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(IMAGE_TAG)
-OPM_VERSION =? 1.48.0
+OPM_VERSION ?= 1.48.0
 CATALOG_ARCH ?= amd64
 
 CATALOG_FILE = $(PROJECT_DIR)/catalog/authorino-operator-catalog/operator.yaml
