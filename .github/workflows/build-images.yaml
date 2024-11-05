@@ -89,7 +89,7 @@ jobs:
     needs: build
     name: Build and push bundle image
     runs-on: ubuntu-20.04
-    if: github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+    if: github.ref_name == 'main' || github.ref_name == 'release-v.0.12.0' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     steps:
       - name: Set up Go 1.21.x
         uses: actions/setup-go@v4
@@ -160,7 +160,7 @@ jobs:
     strategy:
       matrix:
         arch: [ amd64, arm64, ppc64le, s390x ]
-    if: github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+    if: github.ref_name == 'main' || github.ref_name == 'release-v.0.12.0' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     steps:
       - name: Set up Go 1.21.x
         uses: actions/setup-go@v4
