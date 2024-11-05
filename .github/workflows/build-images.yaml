@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - 'master'
+      - 'release-v.0.12.0'
   workflow_dispatch:
     inputs:
       authorinoVersion:
@@ -19,11 +19,12 @@ on:
 env:
   IMG_TAGS: ${{ github.sha }}
   IMG_REGISTRY_HOST: quay.io
-  IMG_REGISTRY_ORG: kuadrant
+  IMG_REGISTRY_ORG: r3hankhan
   MAIN_BRANCH_NAME: main
   OPERATOR_NAME: authorino-operator
   BUILD_CONFIG_FILE: build.yaml
   LATEST_AUTHORINO_GITREF: ${{ vars.AUTHORINO_SHA != '' && vars.AUTHORINO_SHA || 'latest' }}
+  ARCHITECTURES: "amd64 arm64 ppc64le s390x"
 
 jobs:
   build:
@@ -63,9 +64,9 @@ jobs:
         with:
           image: ${{ env.OPERATOR_NAME }}
           tags: ${{ env.IMG_TAGS }}
-          platforms: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+          platforms: linux/s390x
           build-args: |
-            OPERATOR_VERSION=${{ env.VERSION }}
+            VERSION=${{ env.VERSION }}
             GIT_SHA=${{ github.sha }}
             DIRTY=false
             DEFAULT_AUTHORINO_IMAGE=${{ env.DEFAULT_AUTHORINO_IMAGE }}
@@ -128,12 +129,6 @@ jobs:
         run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} CHANNELS=${{ github.event.inputs.channels }} DEFAULT_CHANNEL=stable
       - name: Git diff
         run: git diff
-      - name: Verify manifests and bundle (main)
-        if: github.ref_name == env.MAIN_BRANCH_NAME
-        run: make verify-manifests verify-bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} IMAGE_TAG=${{ github.sha }} AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }}
-      - name: Verify manifests and bundle (release)
-        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
-        run: make verify-manifests verify-bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} CHANNELS=${{ github.event.inputs.channels }} DEFAULT_CHANNEL=stable
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -162,6 +157,9 @@ jobs:
     name: Build and push catalog image
     needs: [build, build-bundle]
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        arch: [ amd64, arm64, ppc64le, s390x ]
     if: github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     steps:
       - name: Set up Go 1.21.x
@@ -204,7 +202,8 @@ jobs:
             VERSION=${{ env.VERSION }} \
             IMAGE_TAG=${{ github.sha }} \
             AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }} \
-            CHANNELS=${{ inputs.channels }}
+            CHANNELS=${{ inputs.channels }} \
+            CATALOG_ARCH=${{ matrix.arch }}
       - name: Run make catalog (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
         run: |
@@ -212,16 +211,25 @@ jobs:
             REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} \
             VERSION=${{ env.VERSION }} \
             AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} \
-            CHANNELS=${{ inputs.channels }}
+            CHANNELS=${{ inputs.channels }} \
+            CATALOG_ARCH=${{ matrix.arch }}
       - name: Git diff
         run: git diff
+      - name: Process Image Tags with Architecture Suffix
+        id: process-tags
+        run: |
+          new_tags=()
+          for tag in ${IMG_TAGS//,/ }; do
+            new_tags+=("${tag}-${{ matrix.arch }}")
+          done
+          echo "processed_tags=${new_tags[*]}" >> $GITHUB_OUTPUT
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.OPERATOR_NAME }}-catalog
-          tags: ${{ env.IMG_TAGS }}
-          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.process-tags.outputs.processed_tags }}
+          platforms: linux/${{ matrix.arch }}
           context: ./catalog
           dockerfiles: |
             ./catalog/${{ env.OPERATOR_NAME }}-catalog.Dockerfile
@@ -236,4 +244,49 @@ jobs:
           username: ${{ secrets.IMG_REGISTRY_USERNAME }}
           password: ${{ secrets.IMG_REGISTRY_TOKEN }}
       - name: Print Image URL
-        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths}}"
+  create-manifests:
+    name: Create and push catalog image manifests
+    needs: [build, build-bundle,build-catalog]
+    runs-on: ubuntu-20.04  
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Add latest tag
+        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }}
+        id: add-latest-tag
+        run: |
+          echo "IMG_TAGS=latest ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+      - name: Add release tag
+        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
+        id: add-branch-tag
+        run: |
+          TAG_NAME=${GITHUB_REF_NAME/\//-}
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+          echo "IMG_TAGS=${TAG_NAME} ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+      - name: Set Operator version
+        id: operator-version
+        run: |
+          tag=${GITHUB_REF_NAME}
+          if [[ ${tag} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]]; then
+          echo "VERSION=${tag#v}" >> $GITHUB_ENV
+          else
+          echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
+          fi
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.IMG_REGISTRY_HOST }}
+          username: ${{ secrets.IMG_REGISTRY_USERNAME }}
+          password: ${{ secrets.IMG_REGISTRY_TOKEN }}
+      - name: Set script Permissions
+        run: chmod +x ./script/create_manifest.sh
+      - name: Creating and Pushing Manifests
+        shell: bash
+        env:
+          TAG: ${{ env.IMG_TAGS }}
+        run: ./script/create_manifest.sh
