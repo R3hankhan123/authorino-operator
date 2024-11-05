@@ -228,7 +228,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.OPERATOR_NAME }}-catalog
-          tags: ${{ env.IMG_TAGS }}
+          tags: ${{ steps.process-tags.outputs.processed_tags }}
           platforms: linux/${{ matrix.arch }}
           context: ./catalog
           dockerfiles: |
@@ -245,3 +245,48 @@ jobs:
           password: ${{ secrets.IMG_REGISTRY_TOKEN }}
       - name: Print Image URL
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths}}"
+  create-manifests:
+    name: Create and push catalog image manifests
+    needs: [build, build-bundle,build-catalog]
+    runs-on: ubuntu-20.04  
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Add latest tag
+        if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }}
+        id: add-latest-tag
+        run: |
+          echo "IMG_TAGS=latest ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+      - name: Add release tag
+        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
+        id: add-branch-tag
+        run: |
+          TAG_NAME=${GITHUB_REF_NAME/\//-}
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+          echo "IMG_TAGS=${TAG_NAME} ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+      - name: Set Operator version
+        id: operator-version
+        run: |
+          tag=${GITHUB_REF_NAME}
+          if [[ ${tag} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]]; then
+          echo "VERSION=${tag#v}" >> $GITHUB_ENV
+          else
+          echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
+          fi
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.IMG_REGISTRY_HOST }}
+          username: ${{ secrets.IMG_REGISTRY_USERNAME }}
+          password: ${{ secrets.IMG_REGISTRY_TOKEN }}
+      - name: Set script Permissions
+        run: chmod +x ./script/create_manifest.sh
+      - name: Creating and Pushing Manifests
+        shell: bash
+        env:
+          TAG: ${{ env.IMG_TAGS }}
+        run: ./script/create_manifest.sh
