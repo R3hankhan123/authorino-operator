@@ -202,7 +202,8 @@ jobs:
             VERSION=${{ env.VERSION }} \
             IMAGE_TAG=${{ github.sha }} \
             AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }} \
-            CHANNELS=${{ inputs.channels }}
+            CHANNELS=${{ inputs.channels }} \
+            CATALOG_ARCH=${{ matrix.arch }}
       - name: Run make catalog (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
         run: |
