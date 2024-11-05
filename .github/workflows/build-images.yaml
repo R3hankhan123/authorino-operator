@@ -127,7 +127,7 @@ jobs:
         run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} IMAGE_TAG=${{ github.sha }} AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }}
       - name: Run make bundle (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
-        run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} CHANNELS=${{ github.event.inputs.channels }} DEFAULT_CHANNEL=stable
+        run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }}
       - name: Git diff
         run: git diff
       - name: Build Image
