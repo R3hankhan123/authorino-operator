@@ -245,3 +245,10 @@ jobs:
           password: ${{ secrets.IMG_REGISTRY_TOKEN }}
       - name: Print Image URL
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+      - name: Setting Script Permission
+        run: chmod+x ./script/create_manifest.sh
+      - name: Creating and Pushing Manifests
+        shell: bash
+        env:
+          TAG: ${{ env.IMG_TAGS }}
+        run: ./scripts/create_manifest.sh
