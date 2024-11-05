@@ -220,7 +220,7 @@ jobs:
         run: |
           new_tags=()
           for tag in ${IMG_TAGS//,/ }; do
-            new_tags+=("${tag}_${{ matrix.arch }}")
+            new_tags+=("${tag}-${{ matrix.arch }}")
           done
           echo "processed_tags=${new_tags[*]}" >> $GITHUB_OUTPUT
       - name: Build Image
