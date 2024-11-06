@@ -22,6 +22,9 @@ for tag in "${tags[@]}"; do
   for arch in "${architectures[@]}"; do
     # Add the image to the manifest
     podman manifest add "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" "docker://${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+    podman manifest annotate "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" \
+      --os "linux" \
+      --arch "${arch}" 
   done
   
   # Push the manifest to the repository
