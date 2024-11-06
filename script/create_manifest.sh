@@ -7,19 +7,21 @@
 set -e  # Exit on error
 IFS=' ' read -r -a tags <<< "$TAG"
 architectures=(${ARCHITECTURES})
+first_tag="${tags[0]}"
+
+ for arch in "${architectures[@]}"; do
+    # Pull the image for all the architecture
+    podman pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
+  done
 
 for tag in "${tags[@]}"; do
   echo "Creating manifest for $tag"
-  
   # Create a new manifest
   podman manifest create "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}"
   
   for arch in "${architectures[@]}"; do
-    # Pull the image for the current architecture
-    podman pull "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-${arch}"
-    
     # Add the image to the manifest
-    podman manifest add "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" "docker://${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-${arch}"
+    podman manifest add "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}" "docker://${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}"
   done
   
   # Push the manifest to the repository
@@ -30,9 +32,7 @@ for tag in "${tags[@]}"; do
 done
 
 # Clean up individual architecture images
-for tag in "${tags[@]}"; do
   for arch in "${architectures[@]}"; do
     echo "Removing image for architecture: ${arch} and tag: ${tag}-${arch}"
-    podman rmi "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${tag}-${arch}" || true
+    podman rmi "${IMG_REGISTRY_HOST}/${IMG_REGISTRY_ORG}/${OPERATOR_NAME}-catalog:${first_tag}-${arch}" || true
   done
-done
