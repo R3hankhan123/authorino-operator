@@ -173,14 +173,14 @@ jobs:
         if: ${{ github.ref_name == env.MAIN_BRANCH_NAME }}
         id: add-latest-tag
         run: |
-          echo "IMG_TAGS=latest ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+          echo "IMG_TAGS=latest-${{ matrix.arch }} ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
       - name: Add release tag
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
         id: add-branch-tag
         run: |
           TAG_NAME=${GITHUB_REF_NAME/\//-}
           echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
-          echo "IMG_TAGS=${TAG_NAME} ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
+          echo "IMG_TAGS=${TAG_NAME}-${{ matrix.arch }} ${{ env.IMG_TAGS }}" >> $GITHUB_ENV
       - name: Set Operator version
         id: operator-version
         run: |
@@ -215,20 +215,12 @@ jobs:
             CATALOG_ARCH=${{ matrix.arch }}
       - name: Git diff
         run: git diff
-      - name: Process Image Tags with Architecture Suffix
-        id: process-tags
-        run: |
-          new_tags=()
-          for tag in ${IMG_TAGS//,/ }; do
-            new_tags+=("${tag}-${{ matrix.arch }}")
-          done
-          echo "processed_tags=${new_tags[*]}" >> $GITHUB_OUTPUT
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.OPERATOR_NAME }}-catalog
-          tags: ${{ steps.process-tags.outputs.processed_tags }}
+          tags: ${{ env.IMG_TAGS }}
           platforms: linux/${{ matrix.arch }}
           context: ./catalog
           dockerfiles: |
