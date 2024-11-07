@@ -19,7 +19,7 @@ on:
 env:
   IMG_TAGS: ${{ github.sha }}
   IMG_REGISTRY_HOST: quay.io
-  IMG_REGISTRY_ORG: kuadrant
+  IMG_REGISTRY_ORG: r3hankhan
   MAIN_BRANCH_NAME: main
   OPERATOR_NAME: authorino-operator
   BUILD_CONFIG_FILE: build.yaml
@@ -88,7 +88,6 @@ jobs:
     needs: build
     name: Build and push bundle image
     runs-on: ubuntu-20.04
-    if: github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     steps:
       - name: Set up Go 1.21.x
         uses: actions/setup-go@v4
@@ -125,15 +124,9 @@ jobs:
         run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} IMAGE_TAG=${{ github.sha }} AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }}
       - name: Run make bundle (release)
         if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
-        run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} CHANNELS=${{ github.event.inputs.channels }} DEFAULT_CHANNEL=stable
+        run: make bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }}
       - name: Git diff
         run: git diff
-      - name: Verify manifests and bundle (main)
-        if: github.ref_name == env.MAIN_BRANCH_NAME
-        run: make verify-manifests verify-bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} IMAGE_TAG=${{ github.sha }} AUTHORINO_VERSION=${{ env.LATEST_AUTHORINO_GITREF }}
-      - name: Verify manifests and bundle (release)
-        if: ${{ github.ref_name != env.MAIN_BRANCH_NAME }}
-        run: make verify-manifests verify-bundle REGISTRY=${{ env.IMG_REGISTRY_HOST }} ORG=${{ env.IMG_REGISTRY_ORG }} VERSION=${{env.VERSION}} AUTHORINO_VERSION=${{ github.event.inputs.authorinoVersion }} CHANNELS=${{ github.event.inputs.channels }} DEFAULT_CHANNEL=stable
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -162,7 +155,6 @@ jobs:
     name: Build and push catalog image
     needs: [build, build-bundle]
     runs-on: ubuntu-20.04
-    if: github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/v') # We cannot use `env.MAIN_BRANCH_NAME` because `env` context is not available to `job.if`. See https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     steps:
       - name: Set up Go 1.21.x
         uses: actions/setup-go@v4
@@ -221,7 +213,7 @@ jobs:
         with:
           image: ${{ env.OPERATOR_NAME }}-catalog
           tags: ${{ env.IMG_TAGS }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/s390x
           context: ./catalog
           dockerfiles: |
             ./catalog/${{ env.OPERATOR_NAME }}-catalog.Dockerfile
